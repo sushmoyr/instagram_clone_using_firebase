@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:instagram_clone_using_firebase/models/user.dart' as model;
 import 'package:instagram_clone_using_firebase/resources/storage_methods.dart';
 import 'package:instagram_clone_using_firebase/utils/strings.dart';
 
@@ -39,15 +40,20 @@ class AuthMethods {
 
         print(imageUrl);
 
-        await _firestore.collection('users').doc(credential.user!.uid).set({
-          'username': username,
-          'uid': credential.user!.uid,
-          'email': email,
-          'bio': bio,
-          'followers': [],
-          'following': [],
-          'imageUrl': imageUrl,
-        });
+        var user = model.User(
+          uid: credential.user!.uid,
+          imageUrl: imageUrl,
+          username: username,
+          bio: bio,
+          followers: [],
+          following: [],
+          email: email,
+        );
+
+        await _firestore
+            .collection('users')
+            .doc(credential.user!.uid)
+            .set(user.toJson());
 
         res = 'Success';
       }
@@ -61,6 +67,19 @@ class AuthMethods {
   Future<String> loginUser(
       {required String email, required String password}) async {
     String res = 'Some  Error Occurred';
+
+    try {
+      if (email.isNotEmpty && password.isNotEmpty) {
+        await _auth.signInWithEmailAndPassword(
+            email: email, password: password);
+        res = 'Success';
+      } else {
+        res = 'Email or password is empty';
+      }
+    } catch (e) {
+      res = e.toString();
+    }
+    return res;
   }
 
   bool validInput(String value) => value.isNotEmpty;

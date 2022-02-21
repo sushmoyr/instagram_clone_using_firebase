@@ -1,4 +1,8 @@
 import 'dart:typed_data';
+import 'package:instagram_clone_using_firebase/responsive/mobile_screen_layout.dart';
+import 'package:instagram_clone_using_firebase/responsive/responsive_layout.dart';
+import 'package:instagram_clone_using_firebase/responsive/web_screen_layout.dart';
+import 'package:instagram_clone_using_firebase/screens/login_screen.dart';
 import 'package:instagram_clone_using_firebase/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -137,6 +141,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       padding: EdgeInsets.symmetric(vertical: 8),
                     ),
                     InkWell(
+                      onTap: () {
+                        context.toDestination(destination: LoginScreen());
+                      },
                       child: Container(
                         child: Text(
                           'Log in',
@@ -175,6 +182,13 @@ class _SignupScreenState extends State<SignupScreen> {
     });
     print(res);
     context.showSnackBar(res);
+    if (res == 'Success') {
+      context.replaceDestination(
+          destination: ResponsiveLayout(
+        mobileScreenLayout: MobileScreenLayout(),
+        webScreenLayout: WebScreenLayout(),
+      ));
+    }
   }
 
   void _selectImage() async {
