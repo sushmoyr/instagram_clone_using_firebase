@@ -1,8 +1,13 @@
+import 'dart:typed_data';
+import 'package:instagram_clone_using_firebase/utils/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:instagram_clone_using_firebase/resources/auth_methods.dart';
 import 'package:instagram_clone_using_firebase/utils/colors.dart';
 import 'package:instagram_clone_using_firebase/utils/dimensions.dart';
 import 'package:instagram_clone_using_firebase/widgets/text_field_input.dart';
+
+import '../utils/utils.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -16,6 +21,8 @@ class _SignupScreenState extends State<SignupScreen> {
   late final TextEditingController _passwordController;
   late final TextEditingController _usernameController;
   late final TextEditingController _bioController;
+  Uint8List? _image;
+  bool _isLoading = false;
   @override
   void initState() {
     _emailController = TextEditingController();
@@ -57,16 +64,19 @@ class _SignupScreenState extends State<SignupScreen> {
                 vSpace24,
                 Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 64,
-                      backgroundImage: NetworkImage(
-                          'https://via.placeholder.com/150x150.png?text=User'),
-                    ),
+                    (_image != null)
+                        ? CircleAvatar(
+                            radius: 64, backgroundImage: MemoryImage(_image!))
+                        : CircleAvatar(
+                            radius: 64,
+                            backgroundImage: NetworkImage(
+                                'https://via.placeholder.com/150x150.png?text=User'),
+                          ),
                     Positioned(
                       bottom: -10,
                       right: 0,
                       child: IconButton(
-                        onPressed: () {},
+                        onPressed: _selectImage,
                         icon: Icon(Icons.add_a_photo),
                       ),
                     )
@@ -76,12 +86,14 @@ class _SignupScreenState extends State<SignupScreen> {
                 TextFieldInput(
                   textEditingController: _usernameController,
                   hintText: 'Enter Your Username',
+                  enabled: !_isLoading,
                 ),
                 vSpace24,
                 TextFieldInput(
                   textEditingController: _emailController,
                   hintText: 'Enter Your Email',
                   textInputType: TextInputType.emailAddress,
+                  enabled: !_isLoading,
                 ),
                 vSpace24,
                 TextFieldInput(
@@ -89,34 +101,30 @@ class _SignupScreenState extends State<SignupScreen> {
                   hintText: 'Enter Your Password',
                   isPass: true,
                   textInputType: TextInputType.visiblePassword,
+                  enabled: !_isLoading,
                 ),
                 vSpace24,
                 TextFieldInput(
                   textEditingController: _bioController,
                   hintText: 'Enter Your Bio',
                   textInputType: TextInputType.multiline,
+                  enabled: !_isLoading,
                 ),
                 vSpace24,
                 InkWell(
-                  onTap: () async {
-                    var res = await AuthMethods().signUpUser(
-                      email: _emailController.text,
-                      password: _passwordController.text,
-                      username: _usernameController.text,
-                      bio: _bioController.text,
-                    );
-
-                    print(res);
-                  },
-                  child: Container(
-                    child: const Text('Sign up'),
+                  onTap: _signUpUser,
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 300),
+                    child: _isLoading
+                        ? CircularProgressIndicator()
+                        : const Text('Sign up'),
                     alignment: Alignment.center,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: ShapeDecoration(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      color: blueColor,
+                      color: _isLoading ? Colors.transparent : blueColor,
                     ),
                   ),
                 ),
@@ -149,5 +157,62 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       ),
     );
+  }
+
+  void _signUpUser() async {
+    setState(() {
+      _isLoading = true;
+    });
+    var res = await AuthMethods().signUpUser(
+      email: _emailController.text,
+      password: _passwordController.text,
+      username: _usernameController.text,
+      bio: _bioController.text,
+      file: _image,
+    );
+    setState(() {
+      _isLoading = false;
+    });
+    print(res);
+    context.showSnackBar(res);
+  }
+
+  void _selectImage() async {
+    var source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 36),
+          child: Row(
+            children: [
+              Expanded(
+                child: IconButton(
+                  iconSize: 36,
+                  onPressed: () {
+                    Navigator.pop(context, ImageSource.camera);
+                  },
+                  icon: Icon(Icons.add_a_photo_outlined),
+                ),
+              ),
+              Expanded(
+                child: IconButton(
+                  iconSize: 36,
+                  onPressed: () {
+                    Navigator.pop(context, ImageSource.gallery);
+                  },
+                  icon: Icon(Icons.add_photo_alternate_outlined),
+                ),
+              )
+            ],
+          ),
+        );
+      },
+    );
+    if (source != null) {
+      Uint8List? image = await pickImage(source);
+      setState(() {
+        _image = image;
+      });
+    }
   }
 }

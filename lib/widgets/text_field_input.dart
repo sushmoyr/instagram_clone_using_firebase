@@ -7,12 +7,14 @@ class TextFieldInput extends StatelessWidget {
     this.isPass = false,
     this.hintText,
     this.textInputType,
+    this.enabled,
   }) : super(key: key);
 
   final TextEditingController textEditingController;
   final bool isPass;
   final String? hintText;
   final TextInputType? textInputType;
+  final bool? enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +23,7 @@ class TextFieldInput extends StatelessWidget {
     );
     return TextField(
       controller: textEditingController,
+      enabled: enabled,
       decoration: InputDecoration(
         hintText: hintText,
         border: inputBorder,
